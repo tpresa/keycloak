@@ -226,6 +226,13 @@ public class MyEventListenerProvider implements EventListenerProvider {
                     </listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term>IdentityProvider</term>
+                    <listitem>
+                        Used to broker authentication to an external IdP. Keycloak provides generic implementations for
+                        OpenID Connect and SAML 2.0, as well as specific implementations for Google, Facebook and Twitter.
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
                     <term>Import</term>
                     <listitem>
                         Imports an exported Keycloak database. Keycloak provides implementations that import from JSON
