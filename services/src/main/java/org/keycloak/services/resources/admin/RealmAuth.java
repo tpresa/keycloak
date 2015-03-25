@@ -2,6 +2,7 @@ package org.keycloak.services.resources.admin;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ApplicationModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
 
 
@@ -11,6 +12,14 @@ import org.keycloak.services.ForbiddenException;
 public class RealmAuth {
 
     private Resource resource;
+
+    public UserModel getUser() {
+        return auth.getUser();
+    }
+
+    public boolean hasRealmAdmin() {
+        return auth.hasOneOfAppRole(realmAdminApp, AdminRoles.MANAGE_REALM);
+    }
 
     public enum Resource {
         APPLICATION, CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER

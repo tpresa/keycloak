@@ -3,25 +3,15 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
-import org.keycloak.ClientConnection;
 import org.keycloak.models.ApplicationModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ForbiddenException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -104,8 +94,24 @@ public class UserApplicationRoleMappingsResource {
         auth.requireView();
 
         Set<RoleModel> available = application.getRoles();
-        return getAvailableRoles(user, available);
+        return getGrantableRoles(user, available);
     }
+
+    public List<RoleRepresentation> getGrantableRoles(UserModel user, Set<RoleModel> available) {
+        Set<RoleModel> roles = new HashSet<RoleModel>();
+        for (RoleModel roleModel : available) {
+            if (user.hasRole(roleModel)) continue;
+            if (!auth.getUser().hasRole(roleModel) && !auth.hasRealmAdmin()) continue;
+            roles.add(roleModel);
+        }
+
+        List<RoleRepresentation> mappings = new ArrayList<RoleRepresentation>();
+        for (RoleModel roleModel : roles) {
+            mappings.add(ModelToRepresentation.toRepresentation(roleModel));
+        }
+        return mappings;
+    }
+
 
     public static List<RoleRepresentation> getAvailableRoles(UserModel user, Set<RoleModel> available) {
         Set<RoleModel> roles = new HashSet<RoleModel>();
@@ -131,6 +137,12 @@ public class UserApplicationRoleMappingsResource {
     public void addApplicationRoleMapping(List<RoleRepresentation> roles) {
         auth.requireManage();
 
+        for (RoleRepresentation role : roles) {
+            RoleModel roleModel = application.getRole(role.getName());
+            if (!auth.getUser().hasRole(roleModel) && !auth.hasRealmAdmin()) {
+                throw new ForbiddenException();
+            }
+        }
         logger.debug("addApplicationRoleMapping");
         for (RoleRepresentation role : roles) {
             RoleModel roleModel = application.getRole(role.getName());
